@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion,ObjectId } = require("mongodb");
 require("colors");
 const cors = require("cors");
 require("dotenv").config();
@@ -63,23 +63,100 @@ app.post("/product", async (req, res) => {
   }
 });
 
-app.get("/product", async(req, res) =>{
-  try{
-      const cursor = Product.find({});
-      const products = await cursor.toArray();
-      res.send({
-        success:true,
-        message:'Successfully got the data',
-        data:products
-      });
-  }catch(error){
+app.get("/product", async (req, res) => {
+  try {
+    const cursor = Product.find({});
+    const products = await cursor.toArray();
+    res.send({
+      success: true,
+      message: "Successfully got the data",
+      data: products,
+    });
+  } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
-      success:false,
-      error:error.message
-    })
+      success: false,
+      error: error.message,
+    });
   }
-})
+});
+
+app.delete("/product/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const product = await Product.findOne({ _id: new ObjectId(id) });
+
+    if (!product?._id) {
+      res.send({
+        success: false,
+        error: "Product doesn't exist",
+      });
+      return;
+    }
+
+    const result = await Product.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount) {
+      res.send({
+        success: true,
+        message: `Successfully deleted the ${product.name}`,
+      });
+    } else {
+    }
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/product/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findOne({ _id: new ObjectId(id) });
+
+    res.send({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.patch("/product/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await Product.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: req.body }
+    );
+
+    if (result.matchedCount) {
+      res.send({
+        success: true,
+        message: `successfully updated ${req.body.name}`,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: "Couldn't update  the product",
+      });
+    }
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("Now Server is running");
