@@ -25,27 +25,6 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-
-    const database = client.db("foodPanda");
-    const Product = database.collection("products");
-    const User = database.collection("users");
-
-    //endpoint
-    app.get("/product", async (req, res) => {
-      const result = await Product.insertOne(req.body);
-      if (result.insertedId) {
-        res.send({
-          success: true,
-          message: `Successfully created the ${req.body.name} with id ${result.insertedId}`,
-        });
-      }else{
-        res.send({
-            success:false,
-            error:"Couldn't create the product"
-        })
-      }
-    });
-
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Database connected".yellow.italic);
@@ -54,6 +33,53 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+const database = client.db("foodPanda");
+const Product = database.collection("products");
+const User = database.collection("users");
+
+//endpoint
+app.post("/product", async (req, res) => {
+  try {
+    const result = await Product.insertOne(req.body);
+
+    if (result.insertedId) {
+      res.send({
+        success: true,
+        message: `Successfully created the ${req.body.name} with id ${result.insertedId}`,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: "Couldn't create the product",
+      });
+    }
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/product", async(req, res) =>{
+  try{
+      const cursor = Product.find({});
+      const products = await cursor.toArray();
+      res.send({
+        success:true,
+        message:'Successfully got the data',
+        data:products
+      });
+  }catch(error){
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success:false,
+      error:error.message
+    })
+  }
+})
 
 app.get("/", (req, res) => {
   res.send("Now Server is running");
